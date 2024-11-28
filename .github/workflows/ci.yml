@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -31,7 +34,6 @@ jobs:
 
     - name: Run tests
       run: pytest tests/ --disable-warnings
-    
 
     - name: Merge to main if successful
       uses: actions/github-script@v6
@@ -46,7 +48,10 @@ jobs:
 
           const pull_number = pullRequest.number;
 
-          // Fusionner la pull request
+          if (!github.pulls || typeof github.pulls.merge !== "function") {
+            throw new Error("GitHub API client is not properly initialized or lacks the required method.");
+          }
+
           await github.pulls.merge({
             owner,
             repo,
