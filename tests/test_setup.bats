@@ -61,3 +61,11 @@ teardown() {
   run bash -c 'OS=UnsupportedOS bash setup.sh'
   [ "$status" -ne 0 ]
   grep -q "Système d'exploitation non pris en charge" "$LOG_FILE"
+}
+
+@test "Exécution complète du script avec succès" {
+  touch "$REQUIREMENTS_FILE"
+  run bash setup.sh
+  [ "$status" -eq 0 ]
+  grep -q "Script d'installation terminé avec succès" "$LOG_FILE"
+}
