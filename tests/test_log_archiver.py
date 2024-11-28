@@ -49,12 +49,14 @@ def test_archive_nonexistent_logs(tmp_path):
     archive_folder = tmp_path / "archive"
     non_existent_logs = [str(tmp_path / "nonexistent.log")]
 
-    archive_logs(non_existent_logs, archive_folder=str(archive_folder))
+    archive_path = archive_logs(non_existent_logs, archive_folder=str(archive_folder))
 
-    # Le dossier archive doit être créé mais vide
+    # Vérifier qu'aucune archive n'est créée
+    assert archive_path is None, "Une archive a été créée alors qu'il ne devrait pas."
     assert archive_folder.exists(), "Le dossier 'archive' n'a pas été créé."
     archive_files = list(archive_folder.glob("*.tar.gz"))
     assert len(archive_files) == 0, "Un fichier d'archive a été créé alors qu'il ne devrait pas."
+
 
 
 def test_archive_empty_log(tmp_path, setup_logs):
