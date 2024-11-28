@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -33,60 +35,11 @@ jobs:
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
-    - name: Verify GITHUB_TOKEN
-      run: echo "GITHUB_TOKEN is set"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-    - name: Create and merge pull request
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const { owner, repo } = context.repo;
-
-          const pulls = await github.rest.pulls.list({
-            owner,
-            repo,
-            state: "open",
-            head: `develop`,
-            base: "main",
-          });
-
-          if (pulls.data.length === 0) {
-            console.log("Aucune pull request existante, création en cours...");
-            const pullRequest = await github.rest.pulls.create({
-              owner,
-              repo,
-              head: "develop",
-              base: "main",
-              title: "Merge develop into main",
-              body: "Cette pull request fusionne automatiquement develop dans main après tests réussis.",
-            });
-
-            console.log(`Pull request créée : #${pullRequest.data.number}`);
-          } else {
-            console.log("Une pull request existante a été trouvée.");
-          }
-
-          const pullRequestNumber = (
-            pulls.data.length > 0
-              ? pulls.data[0].number
-              : (await github.rest.pulls.create({
-                  owner,
-                  repo,
-                  head: "develop",
-                  base: "main",
-                  title: "Merge develop into main",
-                })).data.number
-          );
-
-          console.log(`Fusion de la pull request : #${pullRequestNumber}`);
-          await github.rest.pulls.merge({
-            owner,
-            repo,
-            pull_number: pullRequestNumber,
-            merge_method: "squash",
-          });
-          console.log("Fusion réussie !");
+    - name: Merge develop into main
+      if: success()
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git checkout main
+        git merge develop
+        git push origin main
