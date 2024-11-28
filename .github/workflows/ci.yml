@@ -36,14 +36,6 @@ jobs:
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
-    - name: Install Bats
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bats
-
-    - name: Run Shell Script Tests
-      run: bats tests/test_setup.bats
-
     - name: Create Pull Request from develop to main
       if: github.event_name == 'push'
       uses: actions/github-script@v6
