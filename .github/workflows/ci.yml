@@ -82,5 +82,9 @@ jobs:
             pull_number,
             merge_method: "squash"
           });
+<<<<<<< HEAD
           console.log(`PR #${pull_number} has been merged.`);
         github-token: ${{ secrets.PAT_TOKEN }}
+=======
+
+>>>>>>> ab13062f02f5357434ce03ebc7e42a8d03a26f83
