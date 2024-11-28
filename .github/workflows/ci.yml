@@ -88,4 +88,3 @@ jobs:
           });
 
           console.log(`Merged PR #${prNumber}`);
-
