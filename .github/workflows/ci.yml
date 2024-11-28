@@ -36,6 +36,7 @@ jobs:
       run: pytest tests/ --disable-warnings
 
     - name: Merge to main if successful
+      if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
       with:
         script: |
@@ -47,10 +48,6 @@ jobs:
           }
 
           const pull_number = pullRequest.number;
-
-          if (!github.pulls || typeof github.pulls.merge !== "function") {
-            throw new Error("GitHub API client is not properly initialized or lacks the required method.");
-          }
 
           await github.pulls.merge({
             owner,
