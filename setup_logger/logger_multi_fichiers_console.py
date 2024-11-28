@@ -1,3 +1,4 @@
+import logging
 from scripts.setup_logger import setup_multi_logger
 
 # Configurer le logger multi-fichiers
