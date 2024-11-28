@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -26,6 +29,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
@@ -42,7 +48,10 @@ jobs:
 
           const pull_number = pullRequest.number;
 
-          // Fusionner la pull request
+          if (!github.pulls || typeof github.pulls.merge !== "function") {
+            throw new Error("GitHub API client is not properly initialized or lacks the required method.");
+          }
+
           await github.pulls.merge({
             owner,
             repo,
