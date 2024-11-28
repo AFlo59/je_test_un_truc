@@ -4,16 +4,13 @@ on:
   push:
     branches:
       - develop
-  pull_request:
-    branches:
-      - main
 
 permissions:
-  pull-requests: write
-  contents: read
+  contents: write  # Pour pouvoir créer une PR et fusionner
+  pull-requests: write  # Pour gérer les PRs
 
 jobs:
-  test:
+  test-and-merge:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,28 +33,57 @@ jobs:
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
-    - name: Merge to main if successful
-      if: github.event_name == 'pull_request'
+    - name: Create and merge pull request
+      if: success()
       uses: actions/github-script@v6
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { owner, repo } = context.repo;
-          const pullRequest = context.payload.pull_request;
+          
+          // Vérifiez si une pull request existe déjà de develop -> main
+          const existingPulls = await github.pulls.list({
+            owner,
+            repo,
+            state: "open",
+            head: `${owner}:develop`,
+            base: "main",
+          });
 
-          if (!pullRequest) {
-            console.log("This workflow was not triggered by a pull request.");
-            return;
+          if (existingPulls.data.length === 0) {
+            console.log("Aucune pull request existante, création en cours...");
+            const pullRequest = await github.pulls.create({
+              owner,
+              repo,
+              head: "develop",
+              base: "main",
+              title: "Merge develop into main",
+              body: "Cette pull request fusionne automatiquement develop dans main après tests réussis.",
+            });
+
+            console.log(`Pull request créée : #${pullRequest.data.number}`);
+          } else {
+            console.log("Une pull request existante a été trouvée.");
           }
 
-          const pull_number = pullRequest.number;
+          // Récupérez le numéro de la pull request
+          const pullRequestNumber = (
+            existingPulls.data.length > 0
+              ? existingPulls.data[0].number
+              : (await github.pulls.create({
+                  owner,
+                  repo,
+                  head: "develop",
+                  base: "main",
+                  title: "Merge develop into main",
+                })).data.number
+          );
 
-          if (!github.pulls || typeof github.pulls.merge !== "function") {
-            throw new Error("GitHub API client is not properly initialized.");
-          }
-
+          console.log(`Fusion de la pull request : #${pullRequestNumber}`);
           await github.pulls.merge({
             owner,
             repo,
-            pull_number,
-            merge_method: "squash"
+            pull_number: pullRequestNumber,
+            merge_method: "squash",
           });
+          console.log("Fusion réussie !");
