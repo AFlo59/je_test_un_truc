@@ -33,8 +33,29 @@ jobs:
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
-    - name: Create and Merge PR
-      if: success()
+    - name: Check if PR exists
+      id: check_pr
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            head: `${context.repo.owner}:develop`,
+            base: 'main'
+          });
+
+          if (pullRequests.length > 0) {
+            console.log(`PR already exists: #${pullRequests[0].number}`);
+            core.setOutput("pr_number", pullRequests[0].number);
+          } else {
+            console.log("No PR exists.");
+            core.setOutput("pr_number", "");
+          }
+
+    - name: Create PR if not exists
+      if: success() && steps.check_pr.outputs.pr_number == ''
+      id: create_pr
       uses: actions/github-script@v6
       with:
         script: |
@@ -47,4 +68,24 @@ jobs:
             body: 'Tests passed, merging develop into main automatically.'
           });
           console.log(`Created PR #${pullRequest.number}`);
-        github-token: ${{ secrets.PAT_TOKEN }}
+          core.setOutput("pr_number", pullRequest.number);
+
+    - name: Merge PR
+      if: success()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const prNumber = steps.create_pr.outputs.pr_number || steps.check_pr.outputs.pr_number;
+
+          if (!prNumber) {
+            throw new Error("No PR to merge");
+          }
+
+          await github.rest.pulls.merge({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber
+          });
+
+          console.log(`Merged PR #${prNumber}`);
+
