@@ -2,7 +2,7 @@ import os
 from scripts.setup_logger import setup_multi_logger
 
 
-def test_setup_multi_logger(tmp_path):
+def test_setup_multi_file_only(tmp_path):
     log_file1 = tmp_path / "multi1.log"
     log_file2 = tmp_path / "multi2.log"
     logger = setup_multi_logger(name="multi_logger", log_files=[str(log_file1), str(log_file2)], console=False)
