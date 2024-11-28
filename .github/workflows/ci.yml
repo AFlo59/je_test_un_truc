@@ -38,7 +38,7 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { data: pullRequest } = await github.pulls.create({
+          const { data: pullRequest } = await github.rest.pulls.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
             head: 'develop',
@@ -47,5 +47,4 @@ jobs:
             body: 'Tests passed, merging develop into main automatically.'
           });
           console.log(`Created PR #${pullRequest.number}`);
-
-        token: ${{ secrets.PAT_TOKEN }}
+        github-token: ${{ secrets.PAT_TOKEN }}
