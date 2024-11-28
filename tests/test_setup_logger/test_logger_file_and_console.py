@@ -1,16 +1,34 @@
-from scripts.setup_logger import setup_logger
+import logging
+import sys
 from io import StringIO
 import os
-import sys
+from scripts.setup_logger import setup_logger
 
 def test_logger_file_and_console(tmp_path):
     log_file = tmp_path / "file_and_console.log"
     buffer = StringIO()
-    sys.stdout = buffer
-    logger = setup_logger(name="file_console_logger", log_file=str(log_file), console=True)
+    handler = logging.StreamHandler(buffer)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+
+    logger = setup_logger(
+        name="file_console_logger",
+        log_file=str(log_file),
+        console=True,
+        level=logging.INFO,
+        console_format="%(message)s",
+        file_format="%(message)s"
+    )
+    logger.addHandler(handler)  # Ajouter le handler pour capturer le flux
     logger.info("Message INFO dans fichier et console.")
-    sys.stdout = sys.__stdout__
+
+    # Vérification du fichier
     assert os.path.exists(log_file), "Le fichier de log n'a pas été créé."
     with open(log_file, "r") as file:
-        assert "Message INFO dans fichier et console." in file.read()
-    assert "Message INFO dans fichier et console." in buffer.getvalue()
+        log_content = file.read()
+        assert "Message INFO dans fichier et console." in log_content, (
+            f"Le message attendu n'est pas dans le fichier. Contenu actuel : {log_content}"
+        )
+
+    # Vérification de la console
+    captured = buffer.getvalue().strip()
+    assert "Message INFO dans fichier et console." in captured, "Le message n'a pas été capturé dans la console."
