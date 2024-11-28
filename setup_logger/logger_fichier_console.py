@@ -1,10 +1,11 @@
+import logging
 from scripts.setup_logger import setup_logger
 
 # Configurer le logger
 logger = setup_logger(
     name="all_levels_logger",
     log_file="logs/all_levels.log",  
-    level="logging.DEBUG",            
+    level=logging.DEBUG,            
     console=True                    
 )
 
