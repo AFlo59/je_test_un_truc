@@ -33,6 +33,12 @@ jobs:
     - name: Run tests
       run: pytest tests/ --disable-warnings
 
+    - name: Verify GITHUB_TOKEN
+      run: echo "GITHUB_TOKEN is set"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
     - name: Create and merge pull request
       uses: actions/github-script@v6
       with:
@@ -40,7 +46,6 @@ jobs:
         script: |
           const { owner, repo } = context.repo;
 
-          // Vérifiez si une pull request existe déjà de develop -> main
           const pulls = await github.rest.pulls.list({
             owner,
             repo,
@@ -65,7 +70,6 @@ jobs:
             console.log("Une pull request existante a été trouvée.");
           }
 
-          // Récupérez le numéro de la pull request
           const pullRequestNumber = (
             pulls.data.length > 0
               ? pulls.data[0].number
@@ -86,4 +90,5 @@ jobs:
             merge_method: "squash",
           });
           console.log("Fusion réussie !");
+
 
