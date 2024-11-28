@@ -44,10 +44,15 @@ jobs:
           const pullRequest = context.payload.pull_request;
 
           if (!pullRequest) {
-            throw new Error("No pull request found in the context.");
+            console.log("This workflow was not triggered by a pull request.");
+            return;
           }
 
           const pull_number = pullRequest.number;
+
+          if (!github.pulls || typeof github.pulls.merge !== "function") {
+            throw new Error("GitHub API client is not properly initialized.");
+          }
 
           await github.pulls.merge({
             owner,
@@ -55,5 +60,3 @@ jobs:
             pull_number,
             merge_method: "squash"
           });
-
-
