@@ -90,5 +90,3 @@ jobs:
             merge_method: "squash",
           });
           console.log("Fusion réussie !");
-
-
