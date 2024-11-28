@@ -56,3 +56,4 @@ jobs:
             pull_number,
             merge_method: "squash"
           });
+
