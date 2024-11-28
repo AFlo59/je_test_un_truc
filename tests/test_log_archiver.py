@@ -58,7 +58,6 @@ def test_archive_nonexistent_logs(tmp_path):
     assert len(archive_files) == 0, "Un fichier d'archive a été créé alors qu'il ne devrait pas."
 
 
-
 def test_archive_empty_log(tmp_path, setup_logs):
     """
     Teste l'archivage d'un fichier de log vide.
