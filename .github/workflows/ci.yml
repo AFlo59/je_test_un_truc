@@ -48,4 +48,3 @@ jobs:
           });
           console.log(`Created PR #${pullRequest.number}`);
         github-token: ${{ secrets.PAT_TOKEN }}
-
