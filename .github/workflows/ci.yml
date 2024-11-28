@@ -37,18 +37,21 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { data: pullRequests } = await github.pulls.list({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            state: 'open',
-            base: 'main'
-          });
-          if (pullRequests.length === 1) {
-            await github.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pullRequests[0].number,
-              merge_method: 'squash'
-            });
+          const { owner, repo } = context.repo;
+          const pullRequest = context.payload.pull_request;
+
+          if (!pullRequest) {
+            throw new Error("No pull request found in the context.");
           }
+
+          const pull_number = pullRequest.number;
+
+          // Fusionner la pull request
+          await github.pulls.merge({
+            owner,
+            repo,
+            pull_number,
+            merge_method: "squash"
+          });
+
 
