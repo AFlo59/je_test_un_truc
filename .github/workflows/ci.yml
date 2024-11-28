@@ -10,7 +10,7 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
 
 jobs:
   test:
@@ -29,11 +29,40 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
     - name: Set PYTHONPATH
       run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
 
     - name: Run tests
       run: pytest tests/ --disable-warnings
+
+    - name: Create Pull Request from develop to main
+      if: github.event_name == 'push'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: 'develop',
+            base: 'main'
+          });
+
+          if (pullRequests.length === 0) {
+            console.log("No PR exists. Creating a new one...");
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: 'develop',
+              base: 'main',
+              title: 'Auto PR: develop to main',
+              body: 'This PR was automatically created by the CI/CD workflow.'
+            });
+          } else {
+            console.log(`PR already exists: #${pullRequests[0].number}`);
+          }
+        github-token: ${{ secrets.PAT_TOKEN }}
 
     - name: Merge to main if successful
       if: github.event_name == 'pull_request'
@@ -47,12 +76,11 @@ jobs:
             return;
           }
           const pull_number = pullRequest.number;
-          if (!github.pulls || typeof github.pulls.merge !== "function") {
-            throw new Error("GitHub API client is not properly initialized.");
-          }
-          await github.pulls.merge({
+          await github.rest.pulls.merge({
             owner,
             repo,
             pull_number,
             merge_method: "squash"
           });
+          console.log(`PR #${pull_number} has been merged.`);
+        github-token: ${{ secrets.PAT_TOKEN }}
