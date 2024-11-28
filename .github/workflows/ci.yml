@@ -5,13 +5,13 @@ on:
     branches:
       - develop
 
-permissions:
-  contents: write  # Pour pouvoir créer une PR et fusionner
-  pull-requests: write  # Pour gérer les PRs
-
 jobs:
-  test-and-merge:
+  test:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -34,25 +34,24 @@ jobs:
       run: pytest tests/ --disable-warnings
 
     - name: Create and merge pull request
-      if: success()
       uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { owner, repo } = context.repo;
-          
+
           // Vérifiez si une pull request existe déjà de develop -> main
-          const existingPulls = await github.pulls.list({
+          const pulls = await github.rest.pulls.list({
             owner,
             repo,
             state: "open",
-            head: `${owner}:develop`,
+            head: `develop`,
             base: "main",
           });
 
-          if (existingPulls.data.length === 0) {
+          if (pulls.data.length === 0) {
             console.log("Aucune pull request existante, création en cours...");
-            const pullRequest = await github.pulls.create({
+            const pullRequest = await github.rest.pulls.create({
               owner,
               repo,
               head: "develop",
@@ -68,9 +67,9 @@ jobs:
 
           // Récupérez le numéro de la pull request
           const pullRequestNumber = (
-            existingPulls.data.length > 0
-              ? existingPulls.data[0].number
-              : (await github.pulls.create({
+            pulls.data.length > 0
+              ? pulls.data[0].number
+              : (await github.rest.pulls.create({
                   owner,
                   repo,
                   head: "develop",
@@ -80,10 +79,11 @@ jobs:
           );
 
           console.log(`Fusion de la pull request : #${pullRequestNumber}`);
-          await github.pulls.merge({
+          await github.rest.pulls.merge({
             owner,
             repo,
             pull_number: pullRequestNumber,
             merge_method: "squash",
           });
           console.log("Fusion réussie !");
+
